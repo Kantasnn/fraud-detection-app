@@ -26,17 +26,26 @@ with st.form("input_form"):
     submit = st.form_submit_button("วิเคราะห์ความเสี่ยง")
 
 if submit:
-    # สร้าง DataFrame ให้ตรงกับตอนเทรน
+    # 1. สร้าง DataFrame รับค่าจากหน้าเว็บ
     input_data = pd.DataFrame([{
-        'TransactionAmt': amt, 'ProductCD': product_cd,
-        'card1': 10000, 'card2': 300, # ค่าจำลอง
-        'card4': card4, 'card6': card6,
-        'P_emaildomain': p_email, 'DeviceType': device_type
+        'TransactionAmt': float(amt), 
+        'ProductCD': product_cd,
+        'card1': 10000.0, 
+        'card2': 300.0, 
+        'card4': card4, 
+        'card6': card6,
+        'P_emaildomain': p_email, 
+        'DeviceType': device_type
     }])
     
-    for col in input_data.columns:
-        if input_data[col].dtype == 'object':
-            input_data[col] = input_data[col].astype('category')
+    # 2. บังคับแปลงชนิดข้อมูลให้เป๊ะ 100% ตามที่ XGBoost ต้องการ
+    # คอลัมน์ตัวเลข -> float
+    num_cols = ['TransactionAmt', 'card1', 'card2']
+    input_data[num_cols] = input_data[num_cols].astype('float')
+    
+    # คอลัมน์ตัวอักษร -> category (แก้ปัญหา Error ตรงนี้เลย)
+    cat_cols = ['ProductCD', 'card4', 'card6', 'P_emaildomain', 'DeviceType']
+    input_data[cat_cols] = input_data[cat_cols].astype('category')
             
     # พยากรณ์
     prob = model.predict_proba(input_data)[0][1] * 100
